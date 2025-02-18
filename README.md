@@ -8,7 +8,7 @@ Maven (for building and running the project)
 Setup
 Clone this repository or download the project.
 Ensure you have Java 23 and Maven installed.
-Run the Program
+
 To run the program, execute the following command in the project directory:
 
 mvn clean install

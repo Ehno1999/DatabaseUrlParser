@@ -7,7 +7,7 @@ public class Main {
                 "jdbc:mysql://localhost:3306/mydatabase?user=root&password=secret",
 
                 // PostgreSQL Test URL
-                "jdbc:postgresql://db.example.com:5412/testdb?ssl=true",
+                "jdbc:postgresql://db.example.com:512/testdb?ssl=true",
 
                 // Oracle Test URL
                 "jdbc:oracle://192.168.1.100/testdb",
@@ -24,7 +24,7 @@ public class Main {
 
         for (String url : urls) {
             try {
-                Database db = Database.parseDatabaseURL(url);
+                DatabaseConnection db = DatabaseParser.parseDatabaseURL(url);
                 System.out.println(db);
             } catch (Exception e) {
                 System.err.println("Error parsing URL: " + url + " - " + e.getMessage());

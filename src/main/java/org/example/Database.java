@@ -84,15 +84,12 @@ record Database(String databaseType, String name, String host, String port, Stri
         // Validate database name
         name = validateDatabaseName(name);
 
-        // Validate and process properties
-
-
         // Extracts the properties part from the URL if present (group 5 in the regex match).
-// If no properties are found, assigns an empty string.
+        // If no properties are found, assigns an empty string.
         String propertiesPart = (matcher.groupCount() >= 5 && matcher.group(5) != null) ? matcher.group(5) : "";
 
-// Splits the properties string using '?', '&', or ';' as delimiters, creating an array.
-// If propertiesPart is empty, assigns an empty array instead.
+        // Splits the properties string using '?', '&', or ';' as delimiters, creating an array.
+        // If propertiesPart is empty, assigns an empty array instead.
         String[] properties = !propertiesPart.isEmpty() ? propertiesPart.split("[?&;]") : new String[]{};
 
         return new Database(dbType, name, host, port, properties);

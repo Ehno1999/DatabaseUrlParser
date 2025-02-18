@@ -3,21 +3,43 @@ package org.example;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 record Database(String databaseType, String name, String host, String port, String[] properties) {
+    public static final String SQLITE = "sqlite";
+    public static final String SQLSERVER = "sqlserver";
+    public static final String MONGODB = "mongodb";
+    public static final String MYSQL = "mysql";
+    public static final String POSTGRESQL = "postgresql";
+    public static final String ORACLE = "oracle";
 
-    private static final Map<String, Integer> DEFAULT_PORTS = new HashMap<>();
+    // Regular expression for parsing standard database URLs (e.g., jdbc:mysql://localhost:3306/mydb)
+    public static final String STANDARD_DATABASE_URL_REGEX =
+            "^jdbc:(\\w+)://([^:/?]+)(?::(\\d+))?/([^?;]+)(?:[?;](.*))?$";
 
-    static {
-        DEFAULT_PORTS.put("mysql", 3306);
-        DEFAULT_PORTS.put("postgresql", 5432);
-        DEFAULT_PORTS.put("oracle", 1521);
-        DEFAULT_PORTS.put("sqlserver", 1433);
-        DEFAULT_PORTS.put("mongodb", 27017);
-        DEFAULT_PORTS.put("sqlite", 0);
-    }
+    // Regular expression for parsing SQL Server specific URL (e.g., jdbc:sqlserver://localhost:1433;databaseName=mydb)
+    public static final String SQLSERVER_URL_REGEX =
+            "^jdbc:sqlserver://([^:]+)(?::(\\d+))?;databaseName=([^?;]+)(?:[?&;](.*))?$";
+
+    // Regular expression for parsing MongoDB URL (e.g., jdbc:mongodb://localhost:27017/mydb)
+    public static final String MONGODB_URL_REGEX =
+            "^jdbc:mongodb://([^:/]+)(?::(\\d+))?/([^?;]+)(?:[?&;](.*))?$";
+
+    // Regular expression for parsing SQLite URL (e.g., jdbc:sqlite:/path/to/database)
+    public static final String SQLITE_URL_REGEX =
+            "^jdbc:sqlite:(.*)$";
+    private static final Map<String, Integer> DEFAULT_PORTS = Map.of(
+            MYSQL, 3306,
+            POSTGRESQL, 5432,
+            ORACLE, 1521,
+            SQLSERVER, 1433,
+            MONGODB, 27017,
+            SQLITE, 0
+    );
+
+    private static final Set<String> SUPPORTED_DATABASES = Set.of(SQLITE, SQLSERVER, MONGODB, MYSQL, POSTGRESQL, ORACLE);
 
     static Database parseDatabaseURL(String url) {
         if (url == null || !url.startsWith("jdbc:")) {
@@ -25,24 +47,16 @@ record Database(String databaseType, String name, String host, String port, Stri
         }
 
         String dbType = extractDatabaseType(url);
-        if (dbType == null || dbType.isEmpty()) {
-            throw new IllegalArgumentException("Invalid database URL: Missing database type");
+        if (!SUPPORTED_DATABASES.contains(dbType)) {
+            throw new IllegalArgumentException("Unsupported database type: " + dbType);
         }
 
-
-        if (dbType.equalsIgnoreCase("sqlite")) {
-            return parseSQLiteURL(url);
-        }
-
-        if (dbType.equalsIgnoreCase("sqlserver")) {
-            return parseSQLServerURL(url);
-        }
-
-        if (dbType.equalsIgnoreCase("mongodb")) {
-            return parseMongoDBURL(url);
-        }
-
-        return parseStandardDatabaseURL(url, dbType);
+        return switch (dbType.toLowerCase()) {
+            case SQLITE -> parseSQLiteURL(url);
+            case SQLSERVER -> parseSQLServerURL(url);
+            case MONGODB -> parseMongoDBURL(url);
+            default -> parseStandardDatabaseURL(url, dbType);
+        };
     }
 
     private static String extractDatabaseType(String url) {
@@ -50,7 +64,7 @@ record Database(String databaseType, String name, String host, String port, Stri
     }
 
     private static Database parseStandardDatabaseURL(String url, String dbType) {
-        String regex = "^jdbc:(\\w+)://([^:/?]+)(?::(\\d+))?/([^?;]+)(?:[?;](.*))?$";
+        String regex = STANDARD_DATABASE_URL_REGEX;
         Matcher matcher = Pattern.compile(regex).matcher(url);
 
         if (!matcher.matches()) {
@@ -59,7 +73,7 @@ record Database(String databaseType, String name, String host, String port, Stri
             matcher = Pattern.compile(regex).matcher(url);
 
             if (!matcher.matches()) {
-                throw new IllegalArgumentException("Invalid database URL format: " + url);
+                throw new IllegalArgumentException("Invalid database URL format: ");
             }
             return createDatabaseFromMatcher(matcher, dbType);
         }
@@ -69,20 +83,17 @@ record Database(String databaseType, String name, String host, String port, Stri
     }
 
     private static Database createDatabaseFromMatcher(Matcher matcher, String dbType) {
-        String host = matcher.group(2);  // Extract host from group 2
 
-        String port = matcher.group(3);  // Port is in group 3
-
-        String name = matcher.group(4);  // Database name is in group 4
 
         // Validate host, default to localhost if missing
-        host = validateHost(host);
+
+        String host = validateHost(matcher.group(2));  // Extract host from group 2
 
         // Validate port, default to the database's default port if missing
-        port = validatePort(port, dbType);
+        String port = validatePort(matcher.group(3), dbType);  // Port is in group 3
 
         // Validate database name
-        name = validateDatabaseName(name);
+        String name = validateDatabaseName(matcher.group(4));  // Database name is in group 4
 
         // Extracts the properties part from the URL if present (group 5 in the regex match).
         // If no properties are found, assigns an empty string.
@@ -96,8 +107,7 @@ record Database(String databaseType, String name, String host, String port, Stri
     }
 
     private static Database parseSQLServerURL(String url) {
-        String regex = "^jdbc:sqlserver://([^:]+)(?::(\\d+))?;databaseName=([^?;]+)(?:[?&;](.*))?$";
-        Matcher matcher = Pattern.compile(regex).matcher(url);
+        Matcher matcher = Pattern.compile(SQLSERVER_URL_REGEX).matcher(url);
 
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Invalid SQL Server URL format: " + url);
@@ -108,15 +118,14 @@ record Database(String databaseType, String name, String host, String port, Stri
         String[] properties = (matcher.groupCount() >= 4 && matcher.group(4) != null) ? matcher.group(4).split("[?&;]") : new String[]{};
 
         String host = validateHost(matcher.group(1));
-        String port = validatePort(matcher.group(2), "sqlserver");
+        String port = validatePort(matcher.group(2), SQLSERVER);
         String name = validateDatabaseName(matcher.group(3));
 
-        return new Database("sqlserver", name, host, port, properties);
+        return new Database(SQLSERVER, name, host, port, properties);
     }
 
     private static Database parseMongoDBURL(String url) {
-        String regex = "^jdbc:mongodb://([^:/]+)(?::(\\d+))?/([^?;]+)(?:[?&;](.*))?$";
-        Matcher matcher = Pattern.compile(regex).matcher(url);
+        Matcher matcher = Pattern.compile(MONGODB_URL_REGEX).matcher(url);
 
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Invalid MongoDB URL format: " + url);
@@ -128,19 +137,18 @@ record Database(String databaseType, String name, String host, String port, Stri
 
         String[] properties = (matcher.groupCount() >= 4 && matcher.group(4) != null) ? matcher.group(4).split("[?&;]") : new String[]{};
 
-        return new Database("mongodb", name, host, port, properties);
+        return new Database(MONGODB, name, host, port, properties);
     }
 
     private static Database parseSQLiteURL(String url) {
-        String regex = "^jdbc:sqlite:(.*)$";
-        Matcher matcher = Pattern.compile(regex).matcher(url);
+        Matcher matcher = Pattern.compile(SQLITE_URL_REGEX).matcher(url);
 
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Invalid SQLite URL format: " + url);
         }
 
         String path = matcher.group(1);  // SQLite path is captured as the database name
-        return new Database("sqlite", path, "", String.valueOf(getDefaultPort("sqlite")), new String[]{"path=" + path});
+        return new Database(SQLITE, path, "", String.valueOf(getDefaultPort("sqlite")), new String[]{"path=" + path});
     }
 
     // Validate Host (non-null, non-empty, default to localhost)

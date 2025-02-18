@@ -9,7 +9,7 @@ class DatabaseTest {
     @Test
     void testMySQLURL() {
         String url = "jdbc:mysql://localhost:3306/mydatabase?user=root&password=secret";
-        Database db = Database.parseDatabaseURL(url);
+        Database.DatabaseInstance db = Database.parseDatabaseURL(url);
         assertEquals("mysql", db.databaseType());
         assertEquals("localhost", db.host());
         assertEquals("3306", db.port());

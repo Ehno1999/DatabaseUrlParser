@@ -13,7 +13,6 @@ public enum DatabaseType {
     private final String type;
     private final int defaultPort;
 
-    // Constructor
     DatabaseType(String type, int defaultPort) {
         this.type = type;
         this.defaultPort = defaultPort;

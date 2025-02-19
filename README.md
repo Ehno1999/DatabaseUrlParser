@@ -1,5 +1,5 @@
 Database URL Parser
-This program parses various database connection URLs (MySQL, PostgreSQL, Oracle, SQL Server, MongoDB, SQLite) and prints the details of each database connection (e.g., database type, name, host, port, properties). It supports common JDBC connection formats.
+This program parses various database connection URLs (MySQL, PostgreSQL, Oracle, SQL Server, MongoDB, SQLite) and prints the details of each database connection (e.g., database type, name, host, port, properties)
 
 Requirements
 Java 23 (or higher)

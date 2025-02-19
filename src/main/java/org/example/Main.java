@@ -4,11 +4,12 @@ public class Main {
     public static void main(String[] args) {
         String[] urls = {
                 // MySQL Test URL
-                "jdbc:mysql://localhost:3306/mydatabase?user=root&password=secret",
+                "jdbc:mysql://localhost:9999/mydatabase?user=root&password=secret",
+                "jdbc:mysql://localhost/mydatabase?user=root&password=secret",
 
                 // PostgreSQL Test URL
                 "jdbc:postgresql://db.example.com:512/testdb?ssl=true",
-
+                "jdbc:postgresql://db.example.com/testdb?ssl=true",
                 // Oracle Test URL
                 "jdbc:oracle://192.168.1.100/testdb",
 

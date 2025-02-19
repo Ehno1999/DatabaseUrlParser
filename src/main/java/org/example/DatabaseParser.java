@@ -4,6 +4,7 @@ import java.util.regex.Matcher;
 
 class DatabaseParser {
 
+    // Parses a given JDBC URL and returns a DatabaseConnection object
     public static DatabaseConnection parseDatabaseURL(String url) {
         if (url == null || !url.startsWith("jdbc:")) {
             throw new IllegalArgumentException("Invalid database URL: URL must start with 'jdbc:'");
@@ -20,10 +21,12 @@ class DatabaseParser {
         };
     }
 
+    // Extracts the database type from the JDBC URL
     private static String extractDatabaseType(String url) {
         return url.split(":")[1];
     }
 
+    // Parses standard database URLs (e.g., MySQL, PostgreSQL)
     private static DatabaseConnection parseStandardDatabaseURL(String url, String dbType, DatabaseType databaseType) {
         Matcher matcher = DatabasePattern.STANDARD.getMatcher(url);
 
@@ -37,6 +40,7 @@ class DatabaseParser {
         return createDatabaseFromMatcher(matcher, dbType, databaseType);
     }
 
+    // Parses SQL Server database URLs
     private static DatabaseConnection parseSQLServerURL(String url, DatabaseType databaseType) {
         Matcher matcher = DatabasePattern.SQLSERVER.getMatcher(url);
 
@@ -52,6 +56,7 @@ class DatabaseParser {
         return new DatabaseConnection("sqlserver", name, host, port, properties);
     }
 
+    // Parses MongoDB database URLs
     private static DatabaseConnection parseMongoDBURL(String url, DatabaseType databaseType) {
         Matcher matcher = DatabasePattern.MONGODB.getMatcher(url);
 
@@ -68,6 +73,7 @@ class DatabaseParser {
         return new DatabaseConnection("mongodb", name, host, port, properties);
     }
 
+    // Parses SQLite database URLs
     private static DatabaseConnection parseSQLiteURL(String url, DatabaseType databaseType) {
         Matcher matcher = DatabasePattern.SQLITE.getMatcher(url);
 
@@ -79,6 +85,7 @@ class DatabaseParser {
         return new DatabaseConnection("sqlite", path, "", String.valueOf(databaseType.getDefaultPort()), new String[]{"path=" + path});
     }
 
+    // Creates a DatabaseConnection from a regex matcher
     private static DatabaseConnection createDatabaseFromMatcher(Matcher matcher, String dbType, DatabaseType databaseType) {
         String host = DatabaseValidator.validateHost(matcher.group(2));
         String port = DatabaseValidator.validatePort(matcher.group(3), databaseType);
